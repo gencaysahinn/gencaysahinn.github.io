@@ -1,62 +1,589 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
-  <meta name="google-site-verification" content="Vm3c_nH6WOVzeKBpxF7OpZdjVNKyoxWHjIzgN1wZUXw" />
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uçan Böcek- Official Site</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Biker Roach: İstanbul</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f9f9f9;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
         }
-        header {
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #4BC4CF;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0,0,0,0.7);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 20px;
+        }
+        #score-display {
+            font-size: 52px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            z-index: 10;
+        }
+        .panel {
+            pointer-events: auto;
+            background: rgba(25, 25, 30, 0.92);
+            border: 4px solid #fff;
+            border-radius: 12px;
+            padding: 24px 20px;
             text-align: center;
-            padding: 40px 0;
+            color: #fff;
+            width: 90%;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.5);
+            margin-bottom: auto;
+            margin-top: auto;
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
+        .panel h1 {
+            font-size: 26px;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #000;
+            margin-bottom: 8px;
         }
-        .card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .panel p {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 18px;
+        }
+        .skin-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             margin-bottom: 20px;
         }
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            font-size: 0.9em;
-            color: #7f8c8d;
+        .skin-btn {
+            background: #333;
+            border: 2px solid #777;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            transition: 0.15s;
         }
-        a {
-            color: #2980b9;
-            text-decoration: none;
+        .skin-btn.active {
+            background: #e67e22;
+            border-color: #FFD700;
+            transform: scale(1.05);
         }
-        a:hover {
-            text-decoration: underline;
+        .action-btn {
+            background: #2ecc71;
+            border: 3px solid #fff;
+            color: #fff;
+            font-family: inherit;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 12px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-shadow: 2px 2px 0 #000;
+            box-shadow: 0 4px 0 #1e8449;
+        }
+        .action-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #1e8449;
+        }
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Uçan Böcek</h1>
-        <p>An arcade-style mobile adventure game for Android.</p>
-    </header>
 
-    <div class="card">
-        <h2>About the Game</h2>
-        <p>Welcome to the official home of <strong>Uçan Böcek</strong>! Navigate obstacles, challenge your reflexes, and compete with friends globally using Google Play Games Services leaderboards.</p>
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+        <div id="score-display">0</div>
+
+        <!-- Başlangıç Ekranı -->
+        <div id="start-screen" class="panel">
+            <h1>BIKER ROACH: İSTANBUL</h1>
+            <p>Karakterini seç ve borulara çarpmadan Boğaz'ı geç!</p>
+            <div class="skin-selector">
+                <button class="skin-btn active" data-skin="biker">🏍️ Semt Çocuğu</button>
+                <button class="skin-btn" data-skin="diva">💅 Diva Böcek</button>
+                <button class="skin-btn" data-skin="efkar">🚬 Efkarlı</button>
+            </div>
+            <button id="start-btn" class="action-btn">UÇUŞA GEÇ</button>
+        </div>
+
+        <!-- Oyun Bitti Ekranı -->
+        <div id="game-over-screen" class="panel hidden">
+            <h1 style="color: #e74c3c;">TERLİK YEDİN!</h1>
+            <p id="final-score" style="font-size: 18px; color: #fff; font-weight: bold;">Skor: 0</p>
+            <p id="best-score" style="color: #FFD700;">En İyi: 0</p>
+            <button id="restart-btn" class="action-btn">TEKRAR DENE</button>
+        </div>
     </div>
+</div>
 
-    <div class="card">
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+
+    const scoreEl = document.getElementById('score-display');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalScoreEl = document.getElementById('final-score');
+    const bestScoreEl = document.getElementById('best-score');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const skinBtns = document.querySelectorAll('.skin-btn');
+
+    // Harici görsel kullanmak istersen dosya yollarını buraya yazabilirsin
+    // Örn: bgImg.src = 'istanbul_bg.png';
+    const bgImg = new Image();
+    // bgImg.src = 'istanbul_bg.png'; 
+
+    let width, height;
+    function resize() {
+        width = canvas.width = container.clientWidth;
+        height = canvas.height = container.clientHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Oyun Değişkenleri
+    let gameState = 'START'; // START, PLAYING, GAMEOVER
+    let score = 0;
+    let bestScore = localStorage.getItem('roach_best_score') || 0;
+    let frames = 0;
+    let selectedSkin = 'biker';
+
+    // Skin Seçimi
+    skinBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            skinBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedSkin = btn.dataset.skin;
+        });
+    });
+
+    // Bulutlar (Parallax hareket için)
+    const clouds = [
+        { x: 50, y: 80, speed: 0.4, scale: 1.1 },
+        { x: 240, y: 140, speed: 0.25, scale: 0.8 },
+        { x: 400, y: 60, speed: 0.5, scale: 1.3 }
+    ];
+
+    // Karakter (Hamamböceği)
+    const roach = {
+        x: 90,
+        y: 250,
+        radius: 18,
+        velocity: 0,
+        gravity: 0.45,
+        jump: -7.8,
+        rotation: 0,
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.08)));
+            ctx.rotate(this.rotation);
+
+            // Antenler
+            ctx.strokeStyle = '#2c1608';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(8, -10);
+            ctx.quadraticCurveTo(22, -24, 28, -16);
+            ctx.moveTo(10, -6);
+            ctx.quadraticCurveTo(24, -16, 30, -8);
+            ctx.stroke();
+
+            // Bacaklar
+            ctx.lineWidth = 2;
+            const legOffset = Math.sin(frames * 0.3) * 3;
+            for (let i = -1; i <= 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * 6, 10);
+                ctx.lineTo(i * 8 - 4, 18 + (i % 2 === 0 ? legOffset : -legOffset));
+                ctx.stroke();
+            }
+
+            // Gövde (Kahverengi Kabuk)
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 20, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#1a0d00';
+            ctx.stroke();
+
+            // Kostüm / Skin Detayları
+            if (selectedSkin === 'biker') {
+                // Deri Ceket
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.ellipse(-2, 1, 14, 13, 0, 0.2, Math.PI * 1.8);
+                ctx.fill();
+                ctx.stroke();
+                // Metal fermuar/çıtçıt
+                ctx.fillStyle = '#bdc3c7';
+                ctx.fillRect(2, -6, 3, 3);
+                ctx.fillRect(4, 2, 3, 3);
+            } else if (selectedSkin === 'diva') {
+                // Pembe Kürk & Güneş Gözlüğü
+                ctx.fillStyle = '#ff69b4';
+                ctx.beginPath();
+                ctx.ellipse(-3, 0, 14, 14, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            } else if (selectedSkin === 'efkar') {
+                // Gri Kapüşonlu / Ceket
+                ctx.fillStyle = '#555';
+                ctx.beginPath();
+                ctx.ellipse(-2, 1, 14, 13, 0, 0.2, Math.PI * 1.8);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Gözler
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(11, -4, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Göz Bebeği (Kısık/Havalı Bakış)
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(12, -4, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Göz kapağı (havalı ifade)
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(6, -9, 10, 4);
+
+            // Diva ise pembe gözlük ekle
+            if (selectedSkin === 'diva') {
+                ctx.fillStyle = '#ff1493';
+                ctx.fillRect(7, -7, 9, 6);
+                ctx.strokeStyle = '#FFD700';
+                ctx.strokeRect(7, -7, 9, 6);
+            }
+
+            // Efkarlı ise kürdan/sigara detayı
+            if (selectedSkin === 'efkar') {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(15, 4, 10, 2.5);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(24, 4, 2, 2.5);
+            }
+
+            ctx.restore();
+        },
+        update() {
+            this.velocity += this.gravity;
+            this.y += this.velocity;
+
+            const groundHeight = 90;
+            if (this.y + this.radius >= height - groundHeight) {
+                this.y = height - groundHeight - this.radius;
+                endGame();
+            }
+            if (this.y - this.radius <= 0) {
+                this.y = this.radius;
+                this.velocity = 0;
+            }
+        },
+        flap() {
+            this.velocity = this.jump;
+        }
+    };
+
+    // Engeller (Borular)
+    const pipes = [];
+    const pipeWidth = 64;
+    const pipeGap = 155;
+
+    function spawnPipe() {
+        const minHeight = 80;
+        const maxPos = height - 90 - pipeGap - minHeight;
+        const topHeight = Math.floor(Math.random() * (maxPos - minHeight + 1) + minHeight);
+        pipes.push({
+            x: width,
+            top: topHeight,
+            bottom: topHeight + pipeGap,
+            passed: false
+        });
+    }
+
+    function drawPipes() {
+        pipes.forEach(p => {
+            // Üst Boru
+            drawSinglePipe(p.x, 0, pipeWidth, p.top, true);
+            // Alt Boru
+            drawSinglePipe(p.x, p.bottom, pipeWidth, height - 90 - p.bottom, false);
+        });
+    }
+
+    function drawSinglePipe(x, y, w, h, isTop) {
+        if (h <= 0) return;
+        // Ana boru gövdesi
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(x + 4, y, w - 8, h);
+        // Parlama efekti
+        ctx.fillStyle = '#58d68d';
+        ctx.fillRect(x + 8, y, 8, h);
+        // Gölge efekti
+        ctx.fillStyle = '#239b56';
+        ctx.fillRect(x + w - 14, y, 8, h);
+        // Çerçeve
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#145a32';
+        ctx.strokeRect(x + 4, y, w - 8, h);
+
+        // Boru Başlığı
+        const capHeight = 26;
+        const capY = isTop ? y + h - capHeight : y;
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(x, capY, w, capHeight);
+        ctx.fillStyle = '#58d68d';
+        ctx.fillRect(x + 4, capY, 10, capHeight);
+        ctx.strokeRect(x, capY, w, capHeight);
+    }
+
+    function updatePipes() {
+        if (frames % 105 === 0) spawnPipe();
+
+        for (let i = pipes.length - 1; i >= 0; i--) {
+            let p = pipes[i];
+            p.x -= 2.8;
+
+            // Çarpışma Kontrolü
+            if (
+                roach.x + roach.radius - 4 > p.x &&
+                roach.x - roach.radius + 4 < p.x + pipeWidth &&
+                (roach.y - roach.radius + 4 < p.top || roach.y + roach.radius - 4 > p.bottom)
+            ) {
+                endGame();
+            }
+
+            // Skor Artışı
+            if (!p.passed && p.x + pipeWidth < roach.x) {
+                score++;
+                scoreEl.innerText = score;
+                p.passed = true;
+            }
+
+            if (p.x + pipeWidth < 0) {
+                pipes.splice(i, 1);
+            }
+        }
+    }
+
+    // Sabit İstanbul Silüeti & Hareketli Bulutlar
+    function drawBackground() {
+        // Gökyüzü Rengi (#4BC4CF)
+        ctx.fillStyle = '#4BC4CF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Hareketli Piksel Bulutlar
+        clouds.forEach(c => {
+            if (gameState !== 'GAMEOVER') {
+                c.x -= c.speed;
+                if (c.x < -120) c.x = width + 60;
+            }
+            drawPixelCloud(c.x, c.y, c.scale);
+        });
+
+        const groundY = height - 90;
+
+        // Eğer özel İstanbul resmi yüklendiyse onu çiz, yoksa yerleşik silüeti çiz
+        if (bgImg.complete && bgImg.naturalWidth > 0) {
+            const imgH = 260;
+            ctx.drawImage(bgImg, 0, groundY - imgH + 90, width, imgH);
+        } else {
+            // Uzak Şehir Silüeti (Sabit)
+            ctx.fillStyle = '#7fb3b8';
+            const buildings = [20, 50, 35, 75, 45, 90, 55, 40, 80, 50, 65, 35, 70, 45];
+            const bWidth = width / buildings.length;
+            buildings.forEach((bh, idx) => {
+                ctx.fillRect(idx * bWidth, groundY - bh - 30, bWidth + 1, bh + 30);
+            });
+
+            // Boğaz Köprüsü Silüeti (Küçük & Uzakta)
+            ctx.strokeStyle = '#5d8aa8';
+            ctx.lineWidth = 2;
+            const bridgeX = width * 0.52;
+            const bridgeY = groundY - 55;
+            // İki ayak
+            ctx.fillStyle = '#5d8aa8';
+            ctx.fillRect(bridgeX, bridgeY - 35, 4, 35);
+            ctx.fillRect(bridgeX + 70, bridgeY - 35, 4, 35);
+            // Ana halat
+            ctx.beginPath();
+            ctx.moveTo(bridgeX - 15, bridgeY - 10);
+            ctx.lineTo(bridgeX + 2, bridgeY - 33);
+            ctx.quadraticCurveTo(bridgeX + 37, bridgeY - 12, bridgeX + 72, bridgeY - 33);
+            ctx.lineTo(bridgeX + 89, bridgeY - 10);
+            ctx.stroke();
+
+            // Kız Kulesi Silüeti
+            const towerX = width * 0.78;
+            ctx.fillStyle = '#d5dbdb';
+            ctx.fillRect(towerX, groundY - 45, 14, 25);
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(towerX - 2, groundY - 45);
+            ctx.lineTo(towerX + 7, groundY - 58);
+            ctx.lineTo(towerX + 16, groundY - 45);
+            ctx.fill();
+
+            // Yeşil Çalı Şeridi
+            ctx.fillStyle = '#27ae60';
+            for (let x = 0; x < width + 40; x += 35) {
+                ctx.beginPath();
+                ctx.arc(x, groundY - 15, 25, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Zemin (Kayan Çim Şeridi)
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(0, groundY, width, 22);
+        ctx.fillStyle = '#1e8449';
+        const stripeOffset = (frames * 2.8) % 30;
+        for (let x = -30; x < width + 30; x += 30) {
+            ctx.beginPath();
+            ctx.moveTo(x - stripeOffset, groundY);
+            ctx.lineTo(x + 15 - stripeOffset, groundY);
+            ctx.lineTo(x + 5 - stripeOffset, groundY + 22);
+            ctx.lineTo(x - 10 - stripeOffset, groundY + 22);
+            ctx.fill();
+        }
+        ctx.strokeStyle = '#145a32';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(0, groundY, width, 22);
+
+        // Alt Toprak Alan
+        ctx.fillStyle = '#ded895';
+        ctx.fillRect(0, groundY + 22, width, 68);
+    }
+
+    function drawPixelCloud(x, y, s) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(x, y, 60 * s, 18 * s);
+        ctx.fillRect(x + 12 * s, y - 10 * s, 36 * s, 12 * s);
+        ctx.fillRect(x + 22 * s, y - 16 * s, 18 * s, 8 * s);
+    }
+
+    // Oyun Akış Kontrolleri
+    function startGame() {
+        gameState = 'PLAYING';
+        startScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        score = 0;
+        frames = 0;
+        scoreEl.innerText = score;
+        pipes.length = 0;
+        roach.y = height / 2 - 40;
+        roach.velocity = 0;
+        roach.flap();
+    }
+
+    function endGame() {
+        if (gameState === 'GAMEOVER') return;
+        gameState = 'GAMEOVER';
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('roach_best_score', bestScore);
+        }
+        finalScoreEl.innerText = `Skor: ${score}`;
+        bestScoreEl.innerText = `En İyi: ${bestScore}`;
+        gameOverScreen.classList.remove('hidden');
+    }
+
+    function handleInput(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        if (gameState === 'PLAYING') {
+            roach.flap();
+        }
+    }
+
+    window.addEventListener('mousedown', handleInput);
+    window.addEventListener('touchstart', (e) => {
+        if (e.target.tagName !== 'BUTTON') {
+            e.preventDefault();
+            handleInput(e);
+        }
+    }, { passive: false });
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+            if (gameState === 'PLAYING') roach.flap();
+        }
+    });
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    // Ana Döngü
+    function loop() {
+        ctx.clearRect(0, 0, width, height);
+        drawBackground();
+
+        if (gameState === 'START') {
+            roach.y = height / 2 - 40 + Math.sin(frames * 0.08) * 8;
+            roach.draw();
+            frames++;
+        } else if (gameState === 'PLAYING') {
+            updatePipes();
+            drawPipes();
+            roach.update();
+            roach.draw();
+            frames++;
+        } else if (gameState === 'GAMEOVER') {
+            drawPipes();
+            roach.draw();
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+</script>
+      <div class="card">
         <h2>Legal & Support</h2>
         <p>Read our <a href="privacy.html">Privacy Policy</a> to learn how data is handled.</p>
     </div>
@@ -65,4 +592,5 @@
         <p>&copy; 2026 Uçan Böcek. All rights reserved.</p>
     </footer>
 </body>
+  
 </html>
