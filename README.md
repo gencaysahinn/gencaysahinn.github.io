@@ -1,2 +1,30 @@
 # gencaysahinn.github.io
 Personal
+
+
+# Prıvacy Policy
+
+This Privacy Policy applies to the Uçan Böcek mobile application (the "Service").
+
+1. Information Collection and Use
+We do not directly collect, store, or share any personal data from our users.
+
+2. Third-Party Services
+The App uses third-party services that may collect information used to identify you. Specifically, we use Google AdSense / AdMob to serve advertisements.
+
+Google may use device identifiers, cookies, or similar technologies to collect non-personal data (such as IP address, device type, and ad interactions) to personalize ads and analyze traffic.
+
+For more details on how Google handles your data, please review:
+
+Google Privacy & Terms
+
+3. Children’s Privacy
+This App does not knowingly collect personally identifiable information from children under the age of 13.
+
+4. Changes to This Privacy Policy
+We may update our Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date.
+
+5. Contact Us
+If you have any questions or suggestions about our Privacy Policy, contact us at:
+
+Email: gncytest@gmail.com
